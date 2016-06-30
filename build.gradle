@@ -74,6 +74,9 @@ dependencies {
         androidTestCompile project(":eglibrary:android-devicetest-support")
         testCompile project(":eglibrary:android-unittest-support")
     } else {
+        compile 'com.eaglesakura:simple-utils:1.+'
+        compile 'com.eaglesakura:android-simple-utils:1.+'
+        compile 'com.eaglesakura:rxandroid-support:1.+'
         compile 'com.eaglesakura:android-gms:1.+'
 
         androidTestCompile 'com.eaglesakura:android-devicetest-support:1.+'
