@@ -1,0 +1,299 @@
+/**
+ * 1.9.0.x : PlayService 9.2.0対応
+ */
+def ARTIFACT_VERSION = "1.9.x"
+def ARTIFACT_NAME = file(".").absoluteFile.name
+def ARTIFACT_INSTALL_TARGET = getArtifactInstallTarget()
+
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.1.+'
+        classpath 'me.tatarka:gradle-retrolambda:3.2.5' // support Lambda
+    }
+}
+
+repositories {
+    maven { url "http://eaglesakura.github.io/maven/" }
+    jcenter()
+    mavenCentral()
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'me.tatarka.retrolambda' /* Android Lambda Support */
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "24"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    defaultConfig {
+        minSdkVersion 15      // 現実的な対応ラインとしてAndroid 4.0.4とする
+        targetSdkVersion 24
+        // Device Test
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"    // JUnit4
+    }
+
+    lintOptions {
+        disable "NewApi"
+    }
+}
+
+// check env
+if (!hasProperty("ANDROID_SUPPORT_LIB_VERSION")) {
+    ext.ANDROID_SUPPORT_LIB_VERSION = "24.+"
+}
+if (!hasProperty("ANDROID_PLAYSERVICE_LIB_VERSION")) {
+    ext.ANDROID_PLAYSERVICE_LIB_VERSION = "+"
+}
+// Local or maven
+if (!hasProperty("EGLIBRARY_COMPILE_LOCAL")) {
+    ext.EGLIBRARY_COMPILE_LOCAL = false
+}
+
+configurations {
+    all*.exclude group: "com.google.code.findbugs", module: "jsr305"
+    all*.exclude group: "org.apache.httpcomponents", module: "httpclient"
+
+    // not using okhttp
+    all*.exclude group: "com.squareup.okhttp3", module: "okhttp"
+}
+
+
+dependencies {
+    if (EGLIBRARY_COMPILE_LOCAL) {
+        compile project(':eglibrary:android-gms')
+
+        androidTestCompile project(":eglibrary:android-devicetest-support")
+        testCompile project(":eglibrary:android-unittest-support")
+    } else {
+        compile 'com.eaglesakura:android-gms:1.+'
+
+        androidTestCompile 'com.eaglesakura:android-devicetest-support:1.+'
+        testCompile 'com.eaglesakura:android-unittest-support:1.+'
+    }
+
+    /**
+     * Play Service
+     */
+    compile "com.google.android.gms:play-services-auth:${ANDROID_PLAYSERVICE_LIB_VERSION}"
+
+    /**
+     * Firebase
+     */
+    compile "com.google.firebase:firebase-core:${ANDROID_PLAYSERVICE_LIB_VERSION}"
+    compile "com.google.firebase:firebase-crash:${ANDROID_PLAYSERVICE_LIB_VERSION}"
+    compile "com.google.firebase:firebase-auth:${ANDROID_PLAYSERVICE_LIB_VERSION}"
+    compile "com.google.firebase:firebase-config:${ANDROID_PLAYSERVICE_LIB_VERSION}"
+    compile "com.google.firebase:firebase-database:${ANDROID_PLAYSERVICE_LIB_VERSION}"
+    compile 'com.android.support:support-annotations:+'
+
+    /**
+     * UnitTest用
+     */
+    androidTestCompile "com.google.android.gms:play-services-location:${ANDROID_PLAYSERVICE_LIB_VERSION}"
+}
+
+/**
+ * UnitTest & retro lambda
+ */
+tasks.withType(Test) {
+    project.tasks
+            .findAll {
+        task -> (task.name ==~ /compile.*?TestJava.*?/)
+    }
+    .each { task ->
+        task.doFirst {
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
+        }
+    }
+}
+
+apply plugin: 'maven'
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+android.libraryVariants.all { variant ->
+    if (!"release".equals(variant.name) || "".equals(ARTIFACT_VERSION)) {
+        return;
+    }
+
+    task("javadoc", type: Javadoc) {
+        title = "${file(".").name} ver ${ARTIFACT_VERSION}"
+        description "Generates Android Javadoc for $variant.name."
+        source = variant.javaCompile.source
+        ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
+
+        classpath = files(variant.javaCompile.classpath.files) +
+                files(ext.androidJar) +
+                files("build/intermediates/classes/${variant.name}/") +
+                fileTree("build/intermediates/exploded-aar").include("**/*.jar")
+
+        options.links("http://docs.oracle.com/javase/7/docs/api/");
+        options.links("http://d.android.com/reference/");
+        exclude '**/BuildConfig.java'
+        exclude '**/*Dao.java' /* ignore greenDAO */
+        exclude '**/DaoMaster.java' /* ignore greenDAO */
+        exclude '**/DaoSession.java' /* ignore greenDAO */
+        exclude '**/R.java' /* ignore greenDAO */
+
+        options.addStringOption('Xdoclint:none', '-quiet')
+        options.encoding = "UTF-8"
+        project.configure(options) {
+            memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+            charSet = "UTF-8"
+        }
+    }
+
+
+    task("javadocJar", type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    artifacts {
+        archives javadocJar
+        archives sourcesJar
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri(ARTIFACT_INSTALL_TARGET))
+            pom.version = ARTIFACT_VERSION + getArtifactVersionSuffix()
+            pom.groupId = "com.eaglesakura"
+            pom.artifactId = ARTIFACT_NAME
+        }
+    }
+}
+
+[uploadArchives.repositories.mavenDeployer]*.pom*.whenConfigured { pom ->
+    pom.project {
+        inceptionYear '2016'
+        packaging 'aar'
+        dependencies {
+            dependency {
+                groupId = 'com.eaglesakura'
+                artifactId = 'android-framework'
+                version = dependenceisVersion("com.eaglesakura:android-framework", "2.24.+")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.google.android.gms'
+                artifactId = 'play-services-auth'
+                version = dependenceisVersion("com.eaglesakura:garnet", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.google.firebase'
+                artifactId = 'firebase-core'
+                version = dependenceisVersion("com.google.firebase:firebase-core", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.google.firebase'
+                artifactId = 'firebase-crash'
+                version = dependenceisVersion("com.google.firebase:firebase-crash", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.google.firebase'
+                artifactId = 'firebase-auth'
+                version = dependenceisVersion("com.google.firebase:firebase-auth", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.google.firebase'
+                artifactId = 'firebase-config'
+                version = dependenceisVersion("com.google.firebase:firebase-config", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.google.firebase'
+                artifactId = 'firebase-database'
+                version = dependenceisVersion("com.google.firebase:firebase-database", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                scope = 'compile'
+            }
+        }
+    }
+}
+
+task uploadJavadoc << {
+    def src = file("build/docs/javadoc/");
+    def dst = new File("${ARTIFACT_INSTALL_TARGET.absolutePath}/doc/${ARTIFACT_NAME}/");
+    dst.deleteDir();
+    dst.mkdirs();
+
+    ["/usr/bin/rsync", "-a", src.absolutePath, dst.absolutePath].execute().text;
+}
+
+/**
+ * 依存している固定ライブラリバージョンを取得する
+ */
+String dependenceisVersion(String libName, String defVersion) {
+    def lines = [];
+    def target = file("dependencies.txt");
+    if (!target.file) {
+        return defVersion;
+    }
+
+    target.text.eachLine {
+        if (!it.contains(libName) || it.contains("(")) {
+            return;
+        }
+
+        def tokens = it.split(" ");
+        if (tokens == null || tokens.length == 0) {
+            return;
+        }
+
+        lines += tokens[tokens.length - 1];
+    }
+    if (lines.empty) {
+        println("${libName} -> ${defVersion}")
+        return defVersion;
+    } else {
+        println("${libName} -> ${lines[0]}")
+        return lines[0];
+    }
+}
+
+/**
+ * バージョンを取得する
+ * CircleCIの場合、バージョン末尾にビルド番号を付与する
+ */
+def getArtifactVersionSuffix() {
+    if (System.env.CIRCLE_BUILD_NUM != null) {
+        // CircleCIのバージョンが指定されているので、そちらを利用する
+        return ".${System.env.CIRCLE_BUILD_NUM}"
+    } else {
+        return ".local"
+    }
+}
+
+/**
+ * Mavenの格納先を確定する
+ */
+def getArtifactInstallTarget() {
+    if (file("maven").directory) {
+        return file("maven");
+    } else if (System.env.CIRCLE_ARTIFACTS != null) {
+        return file(System.env.CIRCLE_ARTIFACTS);
+    } else if (System.env.MAVEN_LOCAL_REPO != null) {
+        return file(System.env.MAVEN_LOCAL_REPO);
+    } else {
+        return file("ci-release");
+    }
+}
