@@ -6,6 +6,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import com.eaglesakura.android.firebase.error.FirebaseDatabaseException;
+import com.eaglesakura.android.firebase.error.FirebaseDatabaseSyncException;
 import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.lambda.Action1;
 import com.eaglesakura.lambda.CallbackUtils;
@@ -63,6 +65,7 @@ public class FirebaseData<T> {
                 synchronized (lock) {
                     mValue = dataSnapshot.getValue(mValueClass);
                     ++mSyncCount;
+                    mLastError = null;  // エラーは無視する
                 }
             }
 
@@ -81,7 +84,9 @@ public class FirebaseData<T> {
      */
     @Nullable
     public DatabaseError getLastError() {
-        return mLastError;
+        synchronized (lock) {
+            return mLastError;
+        }
     }
 
     /**
@@ -137,6 +142,31 @@ public class FirebaseData<T> {
         }
 
         return item;
+    }
+
+    /**
+     * エラーが発生するまで問い合わせを続け、アイテムを取得する
+     *
+     * エラーが発生した場合、ハンドリングを中止して例外を投げる
+     */
+    @NonNull
+    public T awaitIfSuccess(CancelCallback cancelCallback) throws TaskCanceledException, FirebaseDatabaseException {
+        T item = null;
+        DatabaseError error = null;
+        while ((item = getValue()) == null && ((error = getLastError()) == null)) {
+            // キャンセルされた
+            if (CallbackUtils.isCanceled(cancelCallback)) {
+                throw new TaskCanceledException();
+            }
+        }
+
+        // エラーが設定されている
+        if (error != null) {
+            throw new FirebaseDatabaseSyncException(error);
+        }
+
+        return item;
+
     }
 
     /**
