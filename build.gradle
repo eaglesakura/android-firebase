@@ -1,7 +1,7 @@
 /**
  * 1.9.0.x : PlayService 9.2.0対応
  */
-def ARTIFACT_VERSION = "1.9.x"
+def ARTIFACT_VERSION = "1.9.0.x"
 def ARTIFACT_NAME = file(".").absoluteFile.name
 def ARTIFACT_INSTALL_TARGET = getArtifactInstallTarget()
 
