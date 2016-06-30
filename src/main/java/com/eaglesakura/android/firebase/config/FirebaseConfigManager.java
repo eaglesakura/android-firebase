@@ -4,7 +4,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
-import com.eaglesakura.android.playservice.util.PlayServiceUtil;
+import com.eaglesakura.android.gms.util.PlayServiceUtil;
 import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.android.util.ContextUtil;
 import com.eaglesakura.lambda.CancelCallback;
