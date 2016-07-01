@@ -70,13 +70,17 @@ configurations {
 dependencies {
     if (EGLIBRARY_COMPILE_LOCAL) {
         compile project(':eglibrary:android-gms')
+        compile project(':eglibrary:android-text-kvs')
+        compile project(':eglibrary:json-wrapper')
 
         androidTestCompile project(":eglibrary:android-devicetest-support")
         testCompile project(":eglibrary:android-unittest-support")
     } else {
         compile 'com.eaglesakura:simple-utils:1.+'
+        compile 'com.eaglesakura:android-text-kvs:1.+'
         compile 'com.eaglesakura:android-simple-utils:1.+'
         compile 'com.eaglesakura:rxandroid-support:1.+'
+        compile 'com.eaglesakura:json-wrapper:1.+'
         compile 'com.eaglesakura:android-gms:1.+'
 
         androidTestCompile 'com.eaglesakura:android-devicetest-support:1.+'
@@ -189,8 +193,20 @@ uploadArchives {
         dependencies {
             dependency {
                 groupId = 'com.eaglesakura'
-                artifactId = 'android-framework'
-                version = dependenceisVersion("com.eaglesakura:android-framework", "2.24.+")
+                artifactId = 'android-text-kvs'
+                version = dependenceisVersion("com.eaglesakura:android-text-kvs", "1.+")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.eaglesakura'
+                artifactId = 'json-wrapper'
+                version = dependenceisVersion("com.eaglesakura:json-wrapper", "1.+")
+                scope = 'compile'
+            }
+            dependency {
+                groupId = 'com.eaglesakura'
+                artifactId = 'android-gms'
+                version = dependenceisVersion("com.eaglesakura:android-gms", "1.+")
                 scope = 'compile'
             }
             dependency {

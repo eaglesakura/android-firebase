@@ -2,14 +2,14 @@ package com.eaglesakura.android.firebase.auth;
 
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthProvider;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.GoogleAuthCredential;
 import com.google.firebase.auth.GoogleAuthProvider;
 
+import com.eaglesakura.android.error.NetworkNotConnectException;
 import com.eaglesakura.android.firebase.error.FirebaseAuthFailedException;
 import com.eaglesakura.android.gms.util.PlayServiceUtil;
 import com.eaglesakura.android.rx.error.TaskCanceledException;
@@ -18,6 +18,7 @@ import com.eaglesakura.lambda.CancelCallback;
 import com.eaglesakura.thread.Holder;
 import com.eaglesakura.util.Util;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -60,7 +61,7 @@ public class FirebaseAuthorizeManager {
      * @param account        ログインされたアカウント情報
      * @param cancelCallback コールバック
      */
-    public FirebaseAuthorizeManager signIn(@NonNull GoogleSignInAccount account, @NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException {
+    public FirebaseAuthorizeManager signIn(@NonNull GoogleSignInAccount account, @NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException, NetworkNotConnectException {
         return signIn(
                 GoogleAuthProvider.getCredential(account.getIdToken(), null),
                 cancelCallback
@@ -72,9 +73,11 @@ public class FirebaseAuthorizeManager {
      *
      * signIn後はgetCurrentUserが行える。
      */
-    public FirebaseAuthorizeManager signIn(@NonNull AuthCredential credential, @NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException {
+    public FirebaseAuthorizeManager signIn(@NonNull AuthCredential credential, @NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException, NetworkNotConnectException {
         synchronized (lock) {
-            Task<AuthResult> task = PlayServiceUtil.await(mAuth.signInWithCredential(credential), cancelCallback);
+            Context context = FirebaseApp.getInstance().getApplicationContext();
+
+            Task<AuthResult> task = PlayServiceUtil.awaitWithNetwork(context, mAuth.signInWithCredential(credential), cancelCallback);
             if (!task.isSuccessful()) {
                 throw new FirebaseAuthFailedException();
             }
@@ -85,7 +88,7 @@ public class FirebaseAuthorizeManager {
     /**
      * サインアウトを完了させる
      */
-    public FirebaseAuthorizeManager signOut(CancelCallback cancelCallback) throws TaskCanceledException {
+    public FirebaseAuthorizeManager signOut(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
         synchronized (lock) {
             if (getCurrentUser() == null) {
                 return this;
