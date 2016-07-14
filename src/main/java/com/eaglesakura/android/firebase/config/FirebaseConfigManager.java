@@ -85,14 +85,6 @@ public class FirebaseConfigManager {
      * @return 完了フラグ
      */
     public int fetch(boolean activate, CancelCallback cancelCallback) throws TaskCanceledException {
-        // キャッシュ時間内であれば、何も行わない
-        {
-            final long EXPIRE_TIME = (mRemoteConfig.getInfo().getFetchTimeMillis() + mCacheExpireTimeMs);
-            if (System.currentTimeMillis() < EXPIRE_TIME) {
-                return FETCH_STATUS_FLAG_COMPLETED | FETCH_STATUS_FLAG_CACHED;
-            }
-        }
-
         long cacheExpireSec = mCacheExpireTimeMs;
 
         if (mRemoteConfig.getInfo().getConfigSettings().isDeveloperModeEnabled()) {

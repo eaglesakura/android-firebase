@@ -23,7 +23,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 /**
+ * Firebaseの認証用Util
  *
+ * 認証待ち等のawait系を補助する。
  */
 public class FirebaseAuthorizeManager {
     private final FirebaseAuth mAuth = FirebaseAuth.getInstance();

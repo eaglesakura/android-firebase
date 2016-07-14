@@ -19,7 +19,6 @@ import com.eaglesakura.lambda.Action1;
 import com.eaglesakura.lambda.CallbackUtils;
 import com.eaglesakura.lambda.CancelCallback;
 import com.eaglesakura.util.StringUtil;
-import com.eaglesakura.util.Timer;
 import com.eaglesakura.util.Util;
 
 import android.annotation.SuppressLint;
@@ -31,7 +30,9 @@ import android.support.annotation.Nullable;
 import java.io.File;
 
 /**
- * Firebase databaseに保持されたデータ構造
+ * Firebase databaseに保持されたデータ構造を管理する。
+ *
+ * 指定時点のDataを明示的にDumpする等の機能を構築する。
  */
 public class FirebaseData<T> {
 
