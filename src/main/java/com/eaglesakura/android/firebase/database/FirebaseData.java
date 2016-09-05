@@ -28,6 +28,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Firebase databaseに保持されたデータ構造を管理する。
@@ -53,9 +55,6 @@ public class FirebaseData<T> {
      */
     int mSyncCount;
 
-    @NonNull
-    final FirebaseDatabase mDatabase = FirebaseDatabase.getInstance();
-
     DatabaseReference mReference;
 
     /**
@@ -77,13 +76,30 @@ public class FirebaseData<T> {
      */
     private String mPath;
 
+    /**
+     * モックデータの配信を行う
+     */
+    private FirebaseMockDataProvider mMockDataProvider;
+
+    /**
+     * グローバルで利用するモックデータを設定する
+     */
+    private static FirebaseMockDataProvider sMockDataProvider;
+
     public FirebaseData(@NonNull Class<T> valueClass) {
         mValueClass = valueClass;
+        mMockDataProvider = sMockDataProvider;
     }
 
     public FirebaseData<T> connect(String path) {
         mPath = path;
-        mReference = mDatabase.getReference(path);
+
+        if (mMockDataProvider != null) {
+            mValue = mMockDataProvider.getData(this, path);
+            return this;
+        }
+
+        mReference = FirebaseDatabase.getInstance().getReference(path);
         mReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -124,6 +140,11 @@ public class FirebaseData<T> {
         }
     }
 
+    @NonNull
+    public Class<T> getValueClass() {
+        return mValueClass;
+    }
+
     /**
      * 値の更新回数を取得する
      */
@@ -160,7 +181,9 @@ public class FirebaseData<T> {
     }
 
     private void validConnectionWait(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
-        AndroidNetworkUtil.assertNetworkConnected(FirebaseApp.getInstance().getApplicationContext());
+        if (mCheckNetworkStatus && (mMockDataProvider == null)) {
+            AndroidNetworkUtil.assertNetworkConnected(getContext());
+        }
 
         if (CallbackUtils.isCanceled(cancelCallback)) {
             throw new TaskCanceledException();
@@ -174,8 +197,7 @@ public class FirebaseData<T> {
      */
     @NonNull
     public FirebaseData<T> await(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
-        T item;
-        while ((item = getValue()) == null) {
+        while (getValue() == null) {
             validConnectionWait(cancelCallback);
             Util.sleep(1);
         }
@@ -190,9 +212,8 @@ public class FirebaseData<T> {
      */
     @NonNull
     public FirebaseData<T> awaitIfSuccess(CancelCallback cancelCallback) throws TaskCanceledException, FirebaseDatabaseException, NetworkNotConnectException {
-        T item = null;
         DatabaseError error = null;
-        while ((item = getValue()) == null && ((error = getLastError()) == null)) {
+        while (getValue() == null && ((error = getLastError()) == null)) {
             validConnectionWait(cancelCallback);
             Util.sleep(1);
         }
@@ -226,7 +247,11 @@ public class FirebaseData<T> {
      * LocalDumpを行う際のKeyを指定する
      */
     String getDumpKey(@Nullable String optionalKey) {
-        String key = mPath + "@" + mReference.getKey();
+        String key = mPath;
+        if (mReference != null) {
+            key += ("@" + mReference.getKey());
+        }
+
         if (!StringUtil.isEmpty(optionalKey)) {
             return key + "@" + optionalKey;
         } else {
@@ -256,7 +281,7 @@ public class FirebaseData<T> {
     @SuppressLint("NewApi")
     public FirebaseData<T> dump(@Nullable String optionalKey) {
         final String key = getDumpKey(optionalKey);
-        Context context = FirebaseApp.getInstance().getApplicationContext();
+        Context context = getContext();
 
         try (
                 TextKeyValueStore kvs = new TextKeyValueStore(context, getDatabasePath(context), TextKeyValueStore.TABLE_NAME_DEFAULT)
@@ -275,7 +300,7 @@ public class FirebaseData<T> {
     @SuppressLint("NewApi")
     public FirebaseData<T> removeDumpValue(@Nullable String optionalKey) {
         final String key = getDumpKey(optionalKey);
-        Context context = FirebaseApp.getInstance().getApplicationContext();
+        Context context = getContext();
 
         try (
                 TextKeyValueStore kvs = new TextKeyValueStore(context, getDatabasePath(context), TextKeyValueStore.TABLE_NAME_DEFAULT)
@@ -313,10 +338,19 @@ public class FirebaseData<T> {
         return restore(optionalKey, 0);
     }
 
+    private Context getContext() {
+        if (mMockDataProvider != null) {
+            return mMockDataProvider.getContext();
+        } else {
+            return FirebaseApp.getInstance().getApplicationContext();
+        }
+    }
+
     /**
      * Dumpした値を復旧する。
      *
      * dumpされていない場合、もしくはdump結果が空文字である場合、valueにはnullを上書きする。
+     * 既にvalueが設定されている場合、このメソッドは何もしない。
      *
      * @param optionalKey  Keyに付与される文字。指定されない場合はデフォルトのKeyで保持する。
      * @param expireTimeMs Dumpしたデータが有効な時間（ミリ秒）, Dumpしたデータが1時間有効であれば1000*3600を指定する。期限切れの場合は削除する。0以下の場合は常に有効
@@ -324,8 +358,12 @@ public class FirebaseData<T> {
      */
     @SuppressLint("NewApi")
     public FirebaseData<T> restore(@Nullable String optionalKey, long expireTimeMs) {
+        if (getValue() != null) {
+            return this;
+        }
+
         final String key = getDumpKey(optionalKey);
-        Context context = FirebaseApp.getInstance().getApplicationContext();
+        Context context = getContext();
 
         try (
                 TextKeyValueStore kvs = new TextKeyValueStore(context, getDatabasePath(context), TextKeyValueStore.TABLE_NAME_DEFAULT)
@@ -354,5 +392,36 @@ public class FirebaseData<T> {
             }
         }
         return this;
+    }
+
+    /**
+     * ダミーデータを与える
+     */
+    public FirebaseData<T> mock(T value) {
+        mLastError = null;
+        mValue = value;
+        return this;
+    }
+
+    /**
+     * ダミーデータを与える
+     */
+    public FirebaseData<T> mock(InputStream json) throws IOException {
+        return mock(JSON.decode(json, mValueClass));
+    }
+
+    /**
+     * ダミーデータを与える
+     */
+    public FirebaseData<T> mock(FirebaseMockDataProvider provider) {
+        mMockDataProvider = provider;
+        return this;
+    }
+
+    /**
+     * 全体で使用するモックを切り替える
+     */
+    public static void globalMock(FirebaseMockDataProvider mockDataProvider) {
+        sMockDataProvider = mockDataProvider;
     }
 }
