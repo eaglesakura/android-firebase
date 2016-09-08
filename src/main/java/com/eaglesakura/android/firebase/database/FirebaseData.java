@@ -358,19 +358,15 @@ public class FirebaseData<T> {
      */
     @SuppressLint("NewApi")
     public FirebaseData<T> restore(@Nullable String optionalKey, long expireTimeMs) {
-        if (getValue() != null) {
-            return this;
-        }
-
         final String key = getDumpKey(optionalKey);
         Context context = getContext();
 
+        T item = null;
         try (
                 TextKeyValueStore kvs = new TextKeyValueStore(context, getDatabasePath(context), TextKeyValueStore.TABLE_NAME_DEFAULT)
         ) {
             kvs.open(expireTimeMs < 0 ? DBOpenType.Read : DBOpenType.Write);    // expireされる可能性があるならWriteモードで開く
             TextKeyValueStore.Data data = kvs.get(key);
-            T item = null;
             if (data != null) {
                 if (expireTimeMs > 0) {
                     // 有効チェック
@@ -386,10 +382,15 @@ public class FirebaseData<T> {
                     item = JSON.decodeOrNull(data.value, mValueClass);
                 }
             }
+        }
 
-            synchronized (lock) {
-                mValue = item;
+        synchronized (lock) {
+            // Restore前に同期が完了していたら、最新版を使うべきである。
+            if (mValue != null) {
+                return this;
             }
+
+            mValue = item;
         }
         return this;
     }
