@@ -212,10 +212,10 @@ public class FirebaseConfigManager {
                 if (task.isComplete()) {
                     if (task.isSuccessful()) {
                         // fetch成功した
-                        if (mRemoteConfig.activateFetched()) {
+                        if (mRemoteConfig.activateFetched() || (mRemoteConfig.getInfo().getLastFetchStatus() != FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET)) {
                             return FETCH_STATUS_FLAG_COMPLETED;
                         } else {
-                            return FETCH_STATUS_FLAG_FAILED;
+                            return FETCH_STATUS_FLAG_FAILED | FETCH_STATUS_FLAG_ACTIVATE;
                         }
                     } else {
                         // 裏のステータスを見る
