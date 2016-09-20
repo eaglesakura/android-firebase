@@ -12,7 +12,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0-rc1'
+        classpath 'com.android.tools.build:gradle:2.2.0'
         classpath 'me.tatarka:gradle-retrolambda:3.2.5' // support Lambda
     }
 }
@@ -84,7 +84,7 @@ dependencies {
         compile 'com.eaglesakura:json-wrapper:1.+'
         compile 'com.eaglesakura:android-gms:1.+'
 
-        androidTestCompile 'com.eaglesakura:android-devicetest-support:1.+'
+        androidTestCompile 'com.eaglesakura:android-devicetest-support:2.+'
         testCompile 'com.eaglesakura:android-unittest-support:1.+'
     }
 
