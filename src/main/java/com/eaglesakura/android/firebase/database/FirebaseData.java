@@ -107,6 +107,7 @@ public class FirebaseData<T> {
                     mValue = dataSnapshot.getValue(mValueClass);
                     ++mSyncCount;
                     mLastError = null;  // エラーは無視する
+                    onUpdatedValue(mValue);
                 }
             }
 
@@ -118,6 +119,13 @@ public class FirebaseData<T> {
             }
         });
         return this;
+    }
+
+    /**
+     * 値が更新された
+     */
+    protected void onUpdatedValue(T value) {
+
     }
 
     /**
@@ -246,7 +254,7 @@ public class FirebaseData<T> {
     /**
      * LocalDumpを行う際のKeyを指定する
      */
-    String getDumpKey(@Nullable String optionalKey) {
+    protected String getDumpKey(@Nullable String optionalKey) {
         String key = mPath;
         if (mReference != null) {
             key += ("@" + mReference.getKey());
@@ -259,7 +267,7 @@ public class FirebaseData<T> {
         }
     }
 
-    File getDatabasePath(Context context) {
+    protected File getDatabasePath(Context context) {
         return context.getDatabasePath("firebase-dump.db");
     }
 
