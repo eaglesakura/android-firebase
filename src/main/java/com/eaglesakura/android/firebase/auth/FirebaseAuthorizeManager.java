@@ -88,6 +88,21 @@ public class FirebaseAuthorizeManager {
     }
 
     /**
+     * 匿名ログインを行う
+     */
+    public FirebaseAuthorizeManager signInAnonymously(@NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException, NetworkNotConnectException {
+        synchronized (lock) {
+            Context context = FirebaseApp.getInstance().getApplicationContext();
+
+            Task<AuthResult> task = PlayServiceUtil.awaitWithNetwork(context, mAuth.signInAnonymously(), cancelCallback);
+            if (!task.isSuccessful()) {
+                throw new FirebaseAuthFailedException();
+            }
+            return this;
+        }
+    }
+
+    /**
      * サインアウトを完了させる
      */
     public FirebaseAuthorizeManager signOut(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
