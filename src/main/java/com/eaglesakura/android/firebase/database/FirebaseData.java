@@ -15,6 +15,7 @@ import com.eaglesakura.android.firebase.error.FirebaseDatabaseSyncException;
 import com.eaglesakura.android.gms.util.PlayServiceUtil;
 import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.android.util.AndroidNetworkUtil;
+import com.eaglesakura.collection.AnonymousBroadcaster;
 import com.eaglesakura.json.JSON;
 import com.eaglesakura.lambda.Action1;
 import com.eaglesakura.lambda.CallbackUtils;
@@ -87,6 +88,11 @@ public class FirebaseData<T> {
      */
     private static FirebaseMockDataProvider sMockDataProvider;
 
+    /**
+     * コールバック登録
+     */
+    private AnonymousBroadcaster mBroadcaster = new AnonymousBroadcaster();
+
     private ValueEventListener mValueListener = new ValueEventListener() {
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
@@ -95,6 +101,9 @@ public class FirebaseData<T> {
                 ++mSyncCount;
                 mLastError = null;  // エラーは無視する
                 onUpdatedValue(mValue);
+                mBroadcaster.safeEach(OnUpdateListener.class, listener -> {
+                    listener.onDataUpdated(FirebaseData.this, mValue);
+                });
             }
         }
 
@@ -117,6 +126,25 @@ public class FirebaseData<T> {
         mReference.addValueEventListener(mValueListener);
         mValueClass = valueClass;
         mMockDataProvider = sMockDataProvider;
+    }
+
+    public interface OnUpdateListener<T> {
+        void onDataUpdated(FirebaseData<T> self, T value);
+    }
+
+    public FirebaseData<T> registerOnUpdateListener(OnUpdateListener obj) {
+        mBroadcaster.register(obj);
+        return this;
+    }
+
+    public FirebaseData<T> weakRegisterOnUpdateListener(OnUpdateListener obj) {
+        mBroadcaster.weakRegister(obj);
+        return this;
+    }
+
+    public FirebaseData<T> unregister(OnUpdateListener obj) {
+        mBroadcaster.unregister(obj);
+        return this;
     }
 
     public FirebaseData<T> connect(String path) {
