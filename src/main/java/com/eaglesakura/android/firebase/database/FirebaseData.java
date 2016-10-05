@@ -12,8 +12,10 @@ import com.eaglesakura.android.db.TextKeyValueStore;
 import com.eaglesakura.android.error.NetworkNotConnectException;
 import com.eaglesakura.android.firebase.error.FirebaseDatabaseException;
 import com.eaglesakura.android.firebase.error.FirebaseDatabaseSyncException;
+import com.eaglesakura.android.gms.util.PlayServiceUtil;
 import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.android.util.AndroidNetworkUtil;
+import com.eaglesakura.collection.AnonymousBroadcaster;
 import com.eaglesakura.json.JSON;
 import com.eaglesakura.lambda.Action1;
 import com.eaglesakura.lambda.CallbackUtils;
@@ -86,9 +88,63 @@ public class FirebaseData<T> {
      */
     private static FirebaseMockDataProvider sMockDataProvider;
 
+    /**
+     * コールバック登録
+     */
+    private AnonymousBroadcaster mBroadcaster = new AnonymousBroadcaster();
+
+    private ValueEventListener mValueListener = new ValueEventListener() {
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+            synchronized (lock) {
+                mValue = dataSnapshot.getValue(mValueClass);
+                ++mSyncCount;
+                mLastError = null;  // エラーは無視する
+                onUpdatedValue(mValue);
+                mBroadcaster.safeEach(OnUpdateListener.class, listener -> {
+                    listener.onDataUpdated(FirebaseData.this, mValue);
+                });
+            }
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+            synchronized (lock) {
+                mLastError = databaseError;
+            }
+        }
+    };
+
     public FirebaseData(@NonNull Class<T> valueClass) {
         mValueClass = valueClass;
         mMockDataProvider = sMockDataProvider;
+    }
+
+    FirebaseData(DatabaseReference reference, String path, @NonNull Class<T> valueClass) {
+        mPath = path + "/" + reference.getKey();
+        mReference = reference;
+        mReference.addValueEventListener(mValueListener);
+        mValueClass = valueClass;
+        mMockDataProvider = sMockDataProvider;
+    }
+
+    public interface OnUpdateListener<T> {
+        void onDataUpdated(FirebaseData<T> self, T value);
+    }
+
+    public FirebaseData<T> registerOnUpdateListener(OnUpdateListener obj) {
+        mBroadcaster.register(obj);
+        return this;
+    }
+
+    public FirebaseData<T> weakRegisterOnUpdateListener(OnUpdateListener obj) {
+        mBroadcaster.weakRegister(obj);
+        return this;
+    }
+
+    public FirebaseData<T> unregister(OnUpdateListener obj) {
+        mBroadcaster.unregister(obj);
+        return this;
     }
 
     public FirebaseData<T> connect(String path) {
@@ -100,24 +156,7 @@ public class FirebaseData<T> {
         }
 
         mReference = FirebaseDatabase.getInstance().getReference(path);
-        mReference.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                synchronized (lock) {
-                    mValue = dataSnapshot.getValue(mValueClass);
-                    ++mSyncCount;
-                    mLastError = null;  // エラーは無視する
-                    onUpdatedValue(mValue);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                synchronized (lock) {
-                    mLastError = databaseError;
-                }
-            }
-        });
+        mReference.addValueEventListener(mValueListener);
         return this;
     }
 
@@ -125,7 +164,6 @@ public class FirebaseData<T> {
      * 値が更新された
      */
     protected void onUpdatedValue(T value) {
-
     }
 
     /**
@@ -136,6 +174,29 @@ public class FirebaseData<T> {
         synchronized (lock) {
             return mLastError;
         }
+    }
+
+    /**
+     * 値のコミットを行う
+     */
+    public FirebaseData<T> commit(T value, CancelCallback cancelCallback) throws TaskCanceledException {
+        PlayServiceUtil.await(mReference.setValue(value), cancelCallback);
+        synchronized (lock) {
+            mValue = value;
+        }
+        return this;
+    }
+
+    /**
+     * 値のコミットを行う
+     * このメソッドは処理結果を待たずに返却される
+     */
+    public FirebaseData<T> commit(T value) {
+        mReference.setValue(value);
+        synchronized (lock) {
+            mValue = value;
+        }
+        return this;
     }
 
     /**
@@ -249,6 +310,14 @@ public class FirebaseData<T> {
      */
     public static <T> FirebaseData<T> newInstance(Class<T> clazz, String path) {
         return new FirebaseData<>(clazz).connect(path);
+    }
+
+    /**
+     * 指定された階層の下にパスを生成し、
+     */
+    public static <T> FirebaseData<T> pushInstance(Class<T> clazz, String path) {
+        DatabaseReference push = FirebaseDatabase.getInstance().getReference(path).push();
+        return new FirebaseData<T>(push, path, clazz);
     }
 
     /**
