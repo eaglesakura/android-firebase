@@ -128,6 +128,10 @@ public class FirebaseData<T> {
         mMockDataProvider = sMockDataProvider;
     }
 
+    public String getPath() {
+        return mPath;
+    }
+
     public interface OnUpdateListener<T> {
         void onDataUpdated(FirebaseData<T> self, T value);
     }
