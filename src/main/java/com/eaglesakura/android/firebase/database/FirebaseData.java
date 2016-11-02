@@ -57,6 +57,9 @@ public class FirebaseData<T> {
      */
     int mSyncCount;
 
+    /**
+     *
+     */
     DatabaseReference mReference;
 
     /**
@@ -474,6 +477,13 @@ public class FirebaseData<T> {
             mValue = item;
         }
         return this;
+    }
+
+    /**
+     * データ同期を切断する
+     */
+    public void disconnect() {
+        mReference.removeEventListener(mValueListener);
     }
 
     /**
