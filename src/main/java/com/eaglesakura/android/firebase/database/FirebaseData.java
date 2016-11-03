@@ -343,8 +343,13 @@ public class FirebaseData<T> {
         }
     }
 
+    /**
+     * データをダンプする対象のファイル名
+     */
+    public static final String DUMP_DATABASE_FILE_NAME = "firebase-dump.db";
+
     protected File getDatabasePath(Context context) {
-        return context.getDatabasePath("firebase-dump.db");
+        return context.getDatabasePath(DUMP_DATABASE_FILE_NAME);
     }
 
     /**
