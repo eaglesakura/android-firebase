@@ -2,7 +2,7 @@
  * 1.9.0.x : PlayService 9.2.0対応
  * 1.9.1.x : PlayService 9.2.1対応, Remote Configがfetchできない場合のワークアラウンドを追加
  */
-def ARTIFACT_VERSION = "1.9.1.x"
+def ARTIFACT_VERSION = "1.9.1"
 def ARTIFACT_NAME = file(".").absoluteFile.name
 def ARTIFACT_INSTALL_TARGET = getArtifactInstallTarget()
 
