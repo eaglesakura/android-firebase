@@ -12,7 +12,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0'
+        classpath 'com.android.tools.build:gradle:2.2.2'
         classpath 'me.tatarka:gradle-retrolambda:3.2.5' // support Lambda
     }
 }
@@ -27,8 +27,8 @@ apply plugin: 'com.android.library'
 apply plugin: 'me.tatarka.retrolambda' /* Android Lambda Support */
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    compileSdkVersion 25
+    buildToolsVersion "25.0.0"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -37,7 +37,7 @@ android {
 
     defaultConfig {
         minSdkVersion 15      // 現実的な対応ラインとしてAndroid 4.0.4とする
-        targetSdkVersion 24
+        targetSdkVersion 25
         // Device Test
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"    // JUnit4
     }
@@ -49,7 +49,7 @@ android {
 
 // check env
 if (!hasProperty("ANDROID_SUPPORT_LIB_VERSION")) {
-    ext.ANDROID_SUPPORT_LIB_VERSION = "24.+"
+    ext.ANDROID_SUPPORT_LIB_VERSION = "25.+"
 }
 if (!hasProperty("ANDROID_PLAYSERVICE_LIB_VERSION")) {
     ext.ANDROID_PLAYSERVICE_LIB_VERSION = "+"
