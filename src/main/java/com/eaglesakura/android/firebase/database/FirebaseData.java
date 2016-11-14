@@ -100,7 +100,11 @@ public class FirebaseData<T> {
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
             synchronized (lock) {
+//                FbLog.debug("onDataChange[" + mValueClass.getName() + "]");
                 mValue = dataSnapshot.getValue(mValueClass);
+//                if (mValue == null) {
+//                    throw new IllegalStateException("Parse Error[" + mValueClass.getName() + "]");
+//                }
                 ++mSyncCount;
                 mLastError = null;  // エラーは無視する
                 onUpdatedValue(mValue);

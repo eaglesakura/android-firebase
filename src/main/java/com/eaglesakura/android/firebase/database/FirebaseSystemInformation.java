@@ -1,5 +1,7 @@
 package com.eaglesakura.android.firebase.database;
 
+import android.support.annotation.Keep;
+
 /**
  * Firebaseのシステムデータを管理する
  */
@@ -39,10 +41,12 @@ public class FirebaseSystemInformation extends FirebaseData<FirebaseSystemInform
         return sInstance;
     }
 
-
     public static class FbInformation {
+        @Keep
         public boolean authenticated;
+        @Keep
         public boolean connected;
+        @Keep
         public long serverTimeOffset;
     }
 }
