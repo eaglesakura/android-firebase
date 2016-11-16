@@ -51,4 +51,11 @@ public class FbLog {
         LogUtil.out(tag, fmt, args);
     }
 
+    public static void debug(String fmt, Object... args) {
+        String tag = "Fb.Debug";
+
+        LogUtil.setLogger(tag, sAppLogger);
+        LogUtil.out(tag, fmt, args);
+    }
+
 }
