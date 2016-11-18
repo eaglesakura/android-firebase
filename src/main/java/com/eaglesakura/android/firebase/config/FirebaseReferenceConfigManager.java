@@ -131,18 +131,18 @@ public class FirebaseReferenceConfigManager<T> {
             int result = mConfigManager.safeFetch(cancelCallback, cancelCallback);
             if ((result & FirebaseConfigManager.FETCH_STATUS_HAS_VALUES) != 0) {
                 FbLog.config("Firebase Config Sync Completed [%d ms]", timer.end());
+                FbLog.config("Firebase Config Path %s", getConfigPath());
 
-                // Database Configを取得する
+                // 新規に接続し、Database Configを取得する
                 timer.start();
                 FirebaseData<T> configRoot = FirebaseData.newInstance(mConfigRootModelClass, getConfigPath());
                 try {
                     configRoot.await(cancelCallback);
                     // データをダンプし、最新版を保持する
-                    dump();
                     mCurrentConfig = configRoot.getValue();
+                    dump();
                 } finally {
                     FbLog.config("Firebase Database Config Sync Completed [%d ms]", timer.end());
-                    // 切断する
                     configRoot.disconnect();
                 }
             } else {
