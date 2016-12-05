@@ -18,6 +18,8 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.Date;
+
 /**
  * Firebase Remote ConfigとDatabase Pathを組み合わせてコンフィグを構築する
  * Configパスは1つのみ対応している。
@@ -56,6 +58,22 @@ public class FirebaseReferenceConfigManager<T> {
     @Nullable
     T mCurrentConfig;
 
+    /**
+     * 最後にFetchされた時刻
+     *
+     * Debug状態を除き、コンフィグ値は1時間に1回以上の間を開けて取得する
+     */
+    @Nullable
+    Date mFetchDate;
+
+    /**
+     * キャッシュされたコンフィグが有効な時間(ms)
+     * Expire時間がすぎるまではキャッシュを必ず利用する。
+     *
+     * デフォルトは1時間である。
+     */
+    long mConfigExpireTimeMs = Timer.toMilliSec(0, 1, 0, 0, 0);
+
     public FirebaseReferenceConfigManager(@NonNull Context context, int schemaVersion, Class<T> configRootModel, String configPathName) {
         mContext = context;
         mSchemaVersion = schemaVersion;
@@ -76,6 +94,7 @@ public class FirebaseReferenceConfigManager<T> {
             TextKeyValueStore.Data data = kvs.get(getDatabaseKey());
             if (data != null && !StringUtil.isEmpty(data.value)) {
                 mCurrentConfig = JSON.decodeOrNull(data.value, mConfigRootModelClass);
+                mFetchDate = new Date(data.date);
             }
         } finally {
             kvs.close();
@@ -106,10 +125,36 @@ public class FirebaseReferenceConfigManager<T> {
     }
 
     /**
+     * コンフィグが有効な時間をミリ秒単位で設定する。
+     *
+     * デフォルトは1時間である。
+     */
+    public void setConfigExpireTimeMs(long configExpireTimeMs) {
+        mConfigExpireTimeMs = configExpireTimeMs;
+    }
+
+    /**
      * 開発フラグを切り替える
      */
     public void setDebugFlag(boolean set) {
         mConfigManager.setFirebaseDebugFlag(set);
+    }
+
+    /**
+     * Fetchされた値が有効であればtrue
+     */
+    protected boolean isConfigExpireTime() {
+        if (mCurrentConfig == null || mFetchDate == null) {
+            return true;
+        }
+
+        if ((System.currentTimeMillis() - mFetchDate.getTime()) > mConfigExpireTimeMs) {
+            // 1時間以上前に更新されているならExpireである
+            return true;
+        }
+
+        // まだ値が有効である
+        return false;
     }
 
     /**
@@ -126,6 +171,13 @@ public class FirebaseReferenceConfigManager<T> {
     public int fetch(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
         Timer timer = new Timer();
         try {
+            if (!isConfigExpireTime()) {
+                // まだログが有効である
+                FbLog.config("Firebase Config Exist date[%s]", mFetchDate.toString());
+                return FirebaseConfigManager.FETCH_STATUS_HAS_VALUES | FirebaseConfigManager.FETCH_STATUS_FLAG_CACHED;
+            } else {
+                FbLog.config("Expire Config date[%s]", "" + mFetchDate);
+            }
 
             // Remote Configを取得する
             int result = mConfigManager.safeFetch(cancelCallback, cancelCallback);
@@ -140,6 +192,7 @@ public class FirebaseReferenceConfigManager<T> {
                     configRoot.await(cancelCallback);
                     // データをダンプし、最新版を保持する
                     mCurrentConfig = configRoot.getValue();
+                    mFetchDate = new Date();
                     dump();
                 } finally {
                     FbLog.config("Firebase Database Config Sync Completed [%d ms]", timer.end());
