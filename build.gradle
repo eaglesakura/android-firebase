@@ -29,7 +29,7 @@ apply plugin: 'me.tatarka.retrolambda' /* Android Lambda Support */
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.0"
+    buildToolsVersion "25.0.2"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
