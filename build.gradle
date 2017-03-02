@@ -50,10 +50,10 @@ android {
 
 // check env
 if (!hasProperty("ANDROID_SUPPORT_LIB_VERSION")) {
-    ext.ANDROID_SUPPORT_LIB_VERSION = "25.+"
+    ext.ANDROID_SUPPORT_LIB_VERSION = "25.2.+"
 }
 if (!hasProperty("ANDROID_PLAYSERVICE_LIB_VERSION")) {
-    ext.ANDROID_PLAYSERVICE_LIB_VERSION = "+"
+    ext.ANDROID_PLAYSERVICE_LIB_VERSION = "10.2.+"
 }
 // Local or maven
 if (!hasProperty("EGLIBRARY_COMPILE_LOCAL")) {
@@ -196,55 +196,55 @@ uploadArchives {
             dependency {
                 groupId = 'com.eaglesakura'
                 artifactId = 'android-text-kvs'
-                version = dependenceisVersion("com.eaglesakura:android-text-kvs", "1.+")
+                version = dependenciesVersion("com.eaglesakura:android-text-kvs", "1.+")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.eaglesakura'
                 artifactId = 'json-wrapper'
-                version = dependenceisVersion("com.eaglesakura:json-wrapper", "1.+")
+                version = dependenciesVersion("com.eaglesakura:json-wrapper", "1.+")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.eaglesakura'
                 artifactId = 'android-gms'
-                version = dependenceisVersion("com.eaglesakura:android-gms", "1.+")
+                version = dependenciesVersion("com.eaglesakura:android-gms", "1.+")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.google.android.gms'
                 artifactId = 'play-services-auth'
-                version = dependenceisVersion("com.eaglesakura:garnet", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                version = dependenciesVersion("com.google.android.gms:play-services-auth", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.google.firebase'
                 artifactId = 'firebase-core'
-                version = dependenceisVersion("com.google.firebase:firebase-core", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                version = dependenciesVersion("com.google.firebase:firebase-core", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.google.firebase'
                 artifactId = 'firebase-crash'
-                version = dependenceisVersion("com.google.firebase:firebase-crash", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                version = dependenciesVersion("com.google.firebase:firebase-crash", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.google.firebase'
                 artifactId = 'firebase-auth'
-                version = dependenceisVersion("com.google.firebase:firebase-auth", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                version = dependenciesVersion("com.google.firebase:firebase-auth", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.google.firebase'
                 artifactId = 'firebase-config'
-                version = dependenceisVersion("com.google.firebase:firebase-config", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                version = dependenciesVersion("com.google.firebase:firebase-config", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
                 scope = 'compile'
             }
             dependency {
                 groupId = 'com.google.firebase'
                 artifactId = 'firebase-database'
-                version = dependenceisVersion("com.google.firebase:firebase-database", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
+                version = dependenciesVersion("com.google.firebase:firebase-database", "${ANDROID_PLAYSERVICE_LIB_VERSION}")
                 scope = 'compile'
             }
         }
@@ -263,7 +263,7 @@ task uploadJavadoc << {
 /**
  * 依存している固定ライブラリバージョンを取得する
  */
-String dependenceisVersion(String libName, String defVersion) {
+String dependenciesVersion(String libName, String defVersion) {
     def lines = [];
     def target = file("dependencies.txt");
     if (!target.file) {
