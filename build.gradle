@@ -76,7 +76,7 @@ dependencies {
         compile "com.eaglesakura:simple-utils:1.1.556"
         compile "com.eaglesakura:android-text-kvs:2.0.445"
         compile "com.eaglesakura:android-simple-utils:1.0.543"
-        compile "com.eaglesakura:rxandroid-support:2.0.275"
+        compile "com.eaglesakura:rxandroid-support:2.1.275"
         compile "com.eaglesakura:json-wrapper:1.0.419"
         compile "com.eaglesakura:android-gms:1.10.103"
 
