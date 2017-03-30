@@ -12,7 +12,6 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.eaglesakura.android.error.NetworkNotConnectException;
 import com.eaglesakura.android.firebase.error.FirebaseAuthFailedException;
 import com.eaglesakura.android.gms.util.PlayServiceUtil;
-import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.lambda.CallbackUtils;
 import com.eaglesakura.lambda.CancelCallback;
 import com.eaglesakura.thread.Holder;
@@ -45,11 +44,11 @@ public class FirebaseAuthorizeManager {
      * ログイン完了を待つ
      */
     @NonNull
-    public FirebaseUser await(CancelCallback cancelCallback) throws TaskCanceledException {
+    public FirebaseUser await(CancelCallback cancelCallback) throws InterruptedException {
         FirebaseUser item;
         while ((item = getCurrentUser()) == null) {
             if (CallbackUtils.isCanceled(cancelCallback)) {
-                throw new TaskCanceledException();
+                throw new InterruptedException();
             }
             Util.sleep(1);
         }
@@ -63,7 +62,7 @@ public class FirebaseAuthorizeManager {
      * @param account        ログインされたアカウント情報
      * @param cancelCallback コールバック
      */
-    public FirebaseAuthorizeManager signIn(@NonNull GoogleSignInAccount account, @NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException, NetworkNotConnectException {
+    public FirebaseAuthorizeManager signIn(@NonNull GoogleSignInAccount account, @NonNull CancelCallback cancelCallback) throws InterruptedException, FirebaseAuthFailedException, NetworkNotConnectException {
         return signIn(
                 GoogleAuthProvider.getCredential(account.getIdToken(), null),
                 cancelCallback
@@ -75,7 +74,7 @@ public class FirebaseAuthorizeManager {
      *
      * signIn後はgetCurrentUserが行える。
      */
-    public FirebaseAuthorizeManager signIn(@NonNull AuthCredential credential, @NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException, NetworkNotConnectException {
+    public FirebaseAuthorizeManager signIn(@NonNull AuthCredential credential, @NonNull CancelCallback cancelCallback) throws InterruptedException, FirebaseAuthFailedException, NetworkNotConnectException {
         synchronized (lock) {
             Context context = FirebaseApp.getInstance().getApplicationContext();
 
@@ -90,7 +89,7 @@ public class FirebaseAuthorizeManager {
     /**
      * 匿名ログインを行う
      */
-    public FirebaseAuthorizeManager signInAnonymously(@NonNull CancelCallback cancelCallback) throws TaskCanceledException, FirebaseAuthFailedException, NetworkNotConnectException {
+    public FirebaseAuthorizeManager signInAnonymously(@NonNull CancelCallback cancelCallback) throws InterruptedException, FirebaseAuthFailedException, NetworkNotConnectException {
         synchronized (lock) {
             Context context = FirebaseApp.getInstance().getApplicationContext();
 
@@ -105,7 +104,7 @@ public class FirebaseAuthorizeManager {
     /**
      * サインアウトを完了させる
      */
-    public FirebaseAuthorizeManager signOut(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
+    public FirebaseAuthorizeManager signOut(CancelCallback cancelCallback) throws InterruptedException, NetworkNotConnectException {
         synchronized (lock) {
             if (getCurrentUser() == null) {
                 return this;
@@ -122,7 +121,7 @@ public class FirebaseAuthorizeManager {
 
                 while (!holder.get()) {
                     if (CallbackUtils.isCanceled(cancelCallback)) {
-                        throw new TaskCanceledException();
+                        throw new InterruptedException();
                     }
                     Util.sleep(1);
                 }

@@ -7,7 +7,6 @@ import com.eaglesakura.android.db.TextKeyValueStore;
 import com.eaglesakura.android.error.NetworkNotConnectException;
 import com.eaglesakura.android.firebase.FbLog;
 import com.eaglesakura.android.firebase.database.FirebaseData;
-import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.json.JSON;
 import com.eaglesakura.lambda.CancelCallback;
 import com.eaglesakura.util.EnvironmentUtil;
@@ -168,7 +167,7 @@ public class FirebaseReferenceConfigManager<T> {
     /**
      * fetch&activateを行う
      */
-    public int fetch(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
+    public int fetch(CancelCallback cancelCallback) throws InterruptedException, NetworkNotConnectException {
         Timer timer = new Timer();
         try {
             if (!isConfigExpireTime()) {
@@ -209,7 +208,7 @@ public class FirebaseReferenceConfigManager<T> {
                 FbLog.config("Firebase Config Sync Failed [%d ms] flags[%x] msg[%s]", timer.end(), result, msg);
             }
             return result;
-        } catch (TaskCanceledException e) {
+        } catch (InterruptedException e) {
             FbLog.config("Firebase Config Sync Abort [%.1f sec]", timer.endSec());
             throw e;
         } catch (NetworkNotConnectException e) {

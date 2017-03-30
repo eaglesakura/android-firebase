@@ -84,7 +84,7 @@ dependencies {
     } else {
         compile "com.eaglesakura:simple-logger:2.0.463"
         compile "com.eaglesakura:json-wrapper:1.1.423"
-        compile "com.eaglesakura:android-gms:1.10.1.106"
+        compile "com.eaglesakura:cerberus:1.10.1.108"
         compile "com.eaglesakura:android-text-kvs:2.2.450"
 
         androidTestCompile "com.eaglesakura:android-devicetest-support:2.1.272"

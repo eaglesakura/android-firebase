@@ -13,7 +13,6 @@ import com.eaglesakura.android.error.NetworkNotConnectException;
 import com.eaglesakura.android.firebase.error.FirebaseDatabaseException;
 import com.eaglesakura.android.firebase.error.FirebaseDatabaseSyncException;
 import com.eaglesakura.android.gms.util.PlayServiceUtil;
-import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.android.util.AndroidNetworkUtil;
 import com.eaglesakura.collection.AnonymousBroadcaster;
 import com.eaglesakura.json.JSON;
@@ -190,7 +189,7 @@ public class FirebaseData<T> {
     /**
      * 値のコミットを行う
      */
-    public FirebaseData<T> commit(T value, CancelCallback cancelCallback) throws TaskCanceledException {
+    public FirebaseData<T> commit(T value, CancelCallback cancelCallback) throws InterruptedException {
         PlayServiceUtil.await(mReference.setValue(value), cancelCallback);
         synchronized (lock) {
             mValue = value;
@@ -260,13 +259,13 @@ public class FirebaseData<T> {
         return this;
     }
 
-    private void validConnectionWait(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
+    private void validConnectionWait(CancelCallback cancelCallback) throws InterruptedException, NetworkNotConnectException {
         if (mCheckNetworkStatus && (mMockDataProvider == null)) {
             AndroidNetworkUtil.assertNetworkConnected(getContext());
         }
 
         if (CallbackUtils.isCanceled(cancelCallback)) {
-            throw new TaskCanceledException();
+            throw new InterruptedException();
         }
     }
 
@@ -276,7 +275,7 @@ public class FirebaseData<T> {
      * @param cancelCallback キャンセルチェック
      */
     @NonNull
-    public FirebaseData<T> await(CancelCallback cancelCallback) throws TaskCanceledException, NetworkNotConnectException {
+    public FirebaseData<T> await(CancelCallback cancelCallback) throws InterruptedException, NetworkNotConnectException {
         while (getValue() == null) {
             validConnectionWait(cancelCallback);
             Util.sleep(1);
@@ -291,7 +290,7 @@ public class FirebaseData<T> {
      * エラーが発生した場合、ハンドリングを中止して例外を投げる
      */
     @NonNull
-    public FirebaseData<T> awaitIfSuccess(CancelCallback cancelCallback) throws TaskCanceledException, FirebaseDatabaseException, NetworkNotConnectException {
+    public FirebaseData<T> awaitIfSuccess(CancelCallback cancelCallback) throws InterruptedException, FirebaseDatabaseException, NetworkNotConnectException {
         DatabaseError error = null;
         while (getValue() == null && ((error = getLastError()) == null)) {
             validConnectionWait(cancelCallback);

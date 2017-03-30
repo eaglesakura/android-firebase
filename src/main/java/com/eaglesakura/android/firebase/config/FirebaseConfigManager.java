@@ -5,7 +5,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 import com.eaglesakura.android.gms.util.PlayServiceUtil;
-import com.eaglesakura.android.rx.error.TaskCanceledException;
 import com.eaglesakura.android.thread.UIHandler;
 import com.eaglesakura.android.util.AndroidThreadUtil;
 import com.eaglesakura.android.util.ContextUtil;
@@ -204,7 +203,7 @@ public class FirebaseConfigManager {
      * @return 完了フラグ
      */
     @WorkerThread
-    public int safeFetch(CancelCallback cancelCallback, CancelCallback fetchAbortCallback) throws TaskCanceledException {
+    public int safeFetch(CancelCallback cancelCallback, CancelCallback fetchAbortCallback) throws InterruptedException {
         try {
             clearFetchTask();
             Task<Void> task = UIHandler.await(() -> preFetchImpl());
@@ -230,7 +229,7 @@ public class FirebaseConfigManager {
 
                 if (CallbackUtils.isCanceled(cancelCallback)) {
                     // タスクキャンセル命令が出た
-                    throw new TaskCanceledException();
+                    throw new InterruptedException();
                 }
 
                 Util.sleep(1);
@@ -248,7 +247,7 @@ public class FirebaseConfigManager {
      * @return 完了フラグ
      */
     @WorkerThread
-    public int fetch(boolean activate, CancelCallback cancelCallback) throws TaskCanceledException {
+    public int fetch(boolean activate, CancelCallback cancelCallback) throws InterruptedException {
         AndroidThreadUtil.assertBackgroundThread();
 
         Task<Void> task = UIHandler.await(() -> preFetchImpl());
