@@ -3,8 +3,9 @@
  * 1.9.1.x  : PlayService 9.2.1対応, Remote Configがfetchできない場合のワークアラウンドを追加
  * 1.10.0.x : PlayService 10.0.0対応
  * 1.10.1.x : bintrayに移行
+ * 1.10.2.x : AS3.0対応
  */
-def ARTIFACT_VERSION = "1.10.1"
+def ARTIFACT_VERSION = "1.10.2"
 def REPOSITORY_NAME = "maven"
 def BINTRAY_LICENSES = ["MIT"]
 def BINTRAY_LABELS = ["android"]
@@ -14,11 +15,10 @@ def BINTRAY_GPG_PASS = System.env.BINTRAY_GPG_PASS
 buildscript {
     repositories {
         jcenter()
-        mavenCentral()
+        maven { url "https://maven.google.com" }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.0'
-        classpath 'me.tatarka:gradle-retrolambda:3.5.0' // support Lambda
+        classpath 'com.android.tools.build:gradle:3.0.0-alpha1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
     }
@@ -26,12 +26,12 @@ buildscript {
 
 repositories {
     jcenter()
-    mavenCentral()
+    jcenter()
+    maven { url "https://maven.google.com" }
     maven { url "https://dl.bintray.com/eaglesakura/maven/" }
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'me.tatarka.retrolambda' /* Android Lambda Support */
 group = "com.eaglesakura"
 version = ARTIFACT_VERSION + getArtifactVersionSuffix()
 
@@ -41,7 +41,7 @@ android {
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
@@ -74,57 +74,41 @@ dependencies {
     compile "com.android.support:support-annotations:25.3.1"
 
     if (EGLIBRARY_COMPILE_LOCAL) {
-        compile project(':eglibrary:simple-logger')
-        compile project(':eglibrary:json-wrapper')
-        compile project(':eglibrary:android-text-kvs')
-        compile project(':eglibrary:android-gms')
+        implementation project(':eglibrary:simple-logger')
+        implementation project(':eglibrary:json-wrapper')
+        implementation project(':eglibrary:android-text-kvs')
+        implementation project(':eglibrary:android-gms')
 
-        androidTestCompile project(":eglibrary:android-devicetest-support")
-        testCompile project(":eglibrary:android-unittest-support")
+        androidTestImplementation project(":eglibrary:android-devicetest-support")
+        testImplementation project(":eglibrary:android-unittest-support")
     } else {
-        compile "com.eaglesakura:simple-logger:2.0.463"
-        compile "com.eaglesakura:json-wrapper:1.1.423"
-        compile "com.eaglesakura:android-text-kvs:2.2.450"
-        compile "com.eaglesakura:android-gms:1.10.1.108"
+        implementation "com.eaglesakura:simple-logger:2.0.463"
+        implementation "com.eaglesakura:json-wrapper:1.1.423"
+        implementation "com.eaglesakura:android-text-kvs:2.2.450"
+        implementation "com.eaglesakura:android-gms:1.10.1.108"
 
-        androidTestCompile "com.eaglesakura:android-devicetest-support:2.1.272"
-        testCompile "com.eaglesakura:android-unittest-support:1.4.207"
+        androidTestImplementation "com.eaglesakura:android-devicetest-support:2.1.272"
+        testImplementation "com.eaglesakura:android-unittest-support:1.4.207"
     }
 
     /**
      * Play Service
      */
-    compile "com.google.android.gms:play-services-auth:10.2.0"
+    implementation "com.google.android.gms:play-services-auth:10.2.0"
 
     /**
      * Firebase
      */
-    compile "com.google.firebase:firebase-core:10.2.0"
-    compile "com.google.firebase:firebase-crash:10.2.0"
-    compile "com.google.firebase:firebase-auth:10.2.0"
-    compile "com.google.firebase:firebase-config:10.2.0"
-    compile "com.google.firebase:firebase-database:10.2.0"
+    implementation "com.google.firebase:firebase-core:10.2.0"
+    implementation "com.google.firebase:firebase-crash:10.2.0"
+    implementation "com.google.firebase:firebase-auth:10.2.0"
+    implementation "com.google.firebase:firebase-config:10.2.0"
+    implementation "com.google.firebase:firebase-database:10.2.0"
 
     /**
      * UnitTest用
      */
-    androidTestCompile "com.google.android.gms:play-services-location:10.2.0"
-}
-
-/**
- * UnitTest & retro lambda
- */
-tasks.withType(Test) {
-    project.tasks
-            .findAll {
-        task -> (task.name ==~ /compile.*?TestJava.*?/)
-    }
-    .each { task ->
-        task.doFirst {
-            sourceCompatibility = JavaVersion.VERSION_1_8
-            targetCompatibility = JavaVersion.VERSION_1_8
-        }
-    }
+    androidTestImplementation "com.google.android.gms:play-services-location:10.2.0"
 }
 
 task sourcesJar(type: Jar) {
