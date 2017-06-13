@@ -5,9 +5,10 @@
  * 1.10.1.x : bintrayに移行
  * 1.10.2.x : AS3.0対応
  * 1.10.3.x : バージョン規則を変更
+ * 2.0.x    : バージョン規則からGMSバージョンを削除
  */
 def ARTIFACT_VERSION = System.env.CIRCLE_TAG == null ?
-        "1.10.3" : System.env.CIRCLE_TAG.substring(System.env.CIRCLE_TAG.indexOf('v') + 1)
+        "2.0" : System.env.CIRCLE_TAG.substring(System.env.CIRCLE_TAG.indexOf('v') + 1)
 def REPOSITORY_NAME = "maven"
 def BINTRAY_LICENSES = ["MIT"]
 def BINTRAY_LABELS = ["android"]
@@ -38,8 +39,8 @@ group = "com.eaglesakura"
 version = ARTIFACT_VERSION + getArtifactVersionSuffix()
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.0"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -48,7 +49,7 @@ android {
 
     defaultConfig {
         minSdkVersion 15      // 現実的な対応ラインとしてAndroid 4.0.4とする
-        targetSdkVersion 25
+        targetSdkVersion 26
         // Device Test
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"    // JUnit4
     }
@@ -73,10 +74,10 @@ configurations {
 
 
 dependencies {
-    compile "com.android.support:support-annotations:25.3.1"
+    implementation "com.android.support:support-annotations:25.3.1"
 
     if (EGLIBRARY_COMPILE_LOCAL) {
-        api project(':eglibrary:json-wrapper')
+        implementation project(':eglibrary:json-wrapper')
         implementation project(':eglibrary:simple-logger')
         implementation project(':eglibrary:android-commons')
         implementation project(':eglibrary:android-text-kvs')
@@ -85,33 +86,33 @@ dependencies {
         androidTestImplementation project(":eglibrary:android-devicetest-support")
         testImplementation project(":eglibrary:android-unittest-support")
     } else {
-        compile "com.eaglesakura:simple-logger:2.0.463"
-        compile "com.eaglesakura:json-wrapper:1.1.423"
-        compile "com.eaglesakura:android-text-kvs:2.3.452"
-        compile "com.eaglesakura:android-gms:1.10.2.111"
+        compile "com.eaglesakura:simple-logger:2.1.0"
+        compile "com.eaglesakura:json-wrapper:1.2.0"
+        compile "com.eaglesakura:android-text-kvs:2.4.0"
+        compile "com.eaglesakura:android-gms:2.0.0"
 
-        androidTestImplementation "com.eaglesakura:android-devicetest-support:2.2.275"
-        testImplementation "com.eaglesakura:android-unittest-support:1.5.211"
+        androidTestImplementation "com.eaglesakura:android-devicetest-support:2.3.0"
+        testImplementation "com.eaglesakura:android-unittest-support:1.6.0"
     }
 
     /**
      * Play Service
      */
-    implementation "com.google.android.gms:play-services-auth:10.2.0"
+    implementation "com.google.android.gms:play-services-auth:11.0.0"
 
     /**
      * Firebase
      */
-    implementation "com.google.firebase:firebase-core:10.2.0"
-    implementation "com.google.firebase:firebase-crash:10.2.0"
-    implementation "com.google.firebase:firebase-auth:10.2.0"
-    implementation "com.google.firebase:firebase-config:10.2.0"
-    implementation "com.google.firebase:firebase-database:10.2.0"
+    implementation "com.google.firebase:firebase-core:11.0.0"
+    implementation "com.google.firebase:firebase-crash:11.0.0"
+    implementation "com.google.firebase:firebase-auth:11.0.0"
+    implementation "com.google.firebase:firebase-config:11.0.0"
+    implementation "com.google.firebase:firebase-database:11.0.0"
 
     /**
      * UnitTest用
      */
-    androidTestImplementation "com.google.android.gms:play-services-location:10.2.0"
+    androidTestImplementation "com.google.android.gms:play-services-location:11.0.0"
 }
 
 task sourcesJar(type: Jar) {
