@@ -59,11 +59,6 @@ android {
     }
 }
 
-// Local or maven
-if (!hasProperty("EGLIBRARY_COMPILE_LOCAL")) {
-    ext.EGLIBRARY_COMPILE_LOCAL = false
-}
-
 configurations {
     all*.exclude group: "com.google.code.findbugs", module: "jsr305"
     all*.exclude group: "org.apache.httpcomponents", module: "httpclient"
@@ -74,45 +69,32 @@ configurations {
 
 
 dependencies {
-    implementation "com.android.support:support-annotations:25.3.1"
-
-    if (EGLIBRARY_COMPILE_LOCAL) {
-        implementation project(':eglibrary:json-wrapper')
-        implementation project(':eglibrary:simple-logger')
-        implementation project(':eglibrary:android-commons')
-        implementation project(':eglibrary:android-text-kvs')
-        implementation project(':eglibrary:android-gms')
-
-        androidTestImplementation project(":eglibrary:android-devicetest-support")
-        testImplementation project(":eglibrary:android-unittest-support")
-    } else {
-        compile "com.eaglesakura:simple-logger:2.1.0"
-        compile "com.eaglesakura:json-wrapper:1.2.0"
-        compile "com.eaglesakura:android-text-kvs:2.4.0"
-        compile "com.eaglesakura:android-gms:2.0.0"
-
-        androidTestImplementation "com.eaglesakura:android-devicetest-support:2.3.0"
-        testImplementation "com.eaglesakura:android-unittest-support:1.6.0"
+    compile "com.eaglesakura:simple-logger:2.1.0"
+    compile "com.eaglesakura:json-wrapper:1.2.0"
+    compile "com.eaglesakura:android-text-kvs:2.4.0"
+    compile("com.eaglesakura:android-gms:1.10.3.0") {
+        exclude(group: "com.google.android.gms")
+        exclude(group: "com.google.android.firebase")
     }
+
+    androidTestImplementation "com.eaglesakura:android-devicetest-support:2.3.0"
+    testImplementation "com.eaglesakura:android-unittest-support:1.6.0"
 
     /**
      * Play Service
      */
-    implementation "com.google.android.gms:play-services-auth:11.0.0"
-
-    /**
-     * Firebase
-     */
-    implementation "com.google.firebase:firebase-core:11.0.0"
-    implementation "com.google.firebase:firebase-crash:11.0.0"
-    implementation "com.google.firebase:firebase-auth:11.0.0"
-    implementation "com.google.firebase:firebase-config:11.0.0"
-    implementation "com.google.firebase:firebase-database:11.0.0"
+    implementation "com.android.support:support-annotations:25.3.1"
+    implementation "com.google.android.gms:play-services-auth:11.0.2"
+    implementation "com.google.firebase:firebase-core:11.0.2"
+    implementation "com.google.firebase:firebase-crash:11.0.2"
+    implementation "com.google.firebase:firebase-auth:11.0.2"
+    implementation "com.google.firebase:firebase-config:11.0.2"
+    implementation "com.google.firebase:firebase-database:11.0.2"
 
     /**
      * UnitTest用
      */
-    androidTestImplementation "com.google.android.gms:play-services-location:11.0.0"
+    androidTestImplementation "com.google.android.gms:play-services-location:11.0.2"
 }
 
 task sourcesJar(type: Jar) {
@@ -134,8 +116,8 @@ android.libraryVariants.all { variant ->
         classpath =
 //                files(variant.javaCompile.classpath.files) +
                 files(ext.androidJar) +
-                files("build/intermediates/classes/${variant.name}/") +
-                fileTree("build/intermediates/exploded-aar").include("**/*.jar")
+                        files("build/intermediates/classes/${variant.name}/") +
+                        fileTree("build/intermediates/exploded-aar").include("**/*.jar")
 
         options.links("http://docs.oracle.com/javase/7/docs/api/");
         options.links("http://d.android.com/reference/");
