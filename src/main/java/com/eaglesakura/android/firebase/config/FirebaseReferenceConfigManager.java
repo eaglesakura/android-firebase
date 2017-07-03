@@ -26,7 +26,10 @@ import java.util.Date;
  * 1. RemoteConfigを同期
  * 2. RemoteConfig内の1コンフィグにパスを格納しておき、パスを取得
  * 3. パスを解析する
+ *
+ * Deprecated: 実行速度の遅さや複雑さが増すことから、直接ConfigにJSONを書き込むほうが有意義であると判断した
  */
+@Deprecated
 public class FirebaseReferenceConfigManager<T> {
     @NonNull
     final FirebaseConfigManager mConfigManager = FirebaseConfigManager.getInstance();
