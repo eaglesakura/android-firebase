@@ -102,6 +102,21 @@ public class FirebaseAuthorizeManager {
     }
 
     /**
+     * 匿名ログインを行う
+     */
+    public FirebaseAuthorizeManager signInWithCustomToken(@NonNull String customAuthToken, @NonNull CancelCallback cancelCallback) throws InterruptedException, FirebaseAuthFailedException, NetworkNotConnectException {
+        synchronized (lock) {
+            Context context = FirebaseApp.getInstance().getApplicationContext();
+
+            Task<AuthResult> task = PlayServiceUtil.awaitWithNetwork(context, mAuth.signInWithCustomToken(customAuthToken), cancelCallback);
+            if (!task.isSuccessful()) {
+                throw new FirebaseAuthFailedException();
+            }
+            return this;
+        }
+    }
+
+    /**
      * サインアウトを完了させる
      */
     public FirebaseAuthorizeManager signOut(CancelCallback cancelCallback) throws InterruptedException, NetworkNotConnectException {
