@@ -6,7 +6,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.GoogleAuthProvider;
 
 import com.eaglesakura.android.error.NetworkNotConnectException;
@@ -15,11 +17,14 @@ import com.eaglesakura.android.gms.util.PlayServiceUtil;
 import com.eaglesakura.lambda.CallbackUtils;
 import com.eaglesakura.lambda.CancelCallback;
 import com.eaglesakura.thread.Holder;
+import com.eaglesakura.util.StringUtil;
 import com.eaglesakura.util.Util;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Firebaseの認証用Util
@@ -31,6 +36,16 @@ public class FirebaseAuthorizeManager {
 
     private final Object lock = new Object();
 
+    /**
+     * ロード済みトークン
+     */
+    private String mToken;
+
+    /**
+     * トークンの有効期限
+     */
+    private long mTokenExpireTime;
+
     private FirebaseAuthorizeManager() {
 
     }
@@ -38,6 +53,31 @@ public class FirebaseAuthorizeManager {
     @Nullable
     public FirebaseUser getCurrentUser() {
         return mAuth.getCurrentUser();
+    }
+
+    @NonNull
+    public String getToken(CancelCallback cancelCallback) throws FirebaseAuthFailedException, InterruptedException {
+        if (!StringUtil.isEmpty(mToken) && System.currentTimeMillis() < mTokenExpireTime) {
+            // トークンがまだ有効である
+            return mToken;
+        }
+
+        // トークンをリフレッシュする
+
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) {
+            throw new FirebaseAuthFailedException("not authorized");
+        }
+
+        Task<GetTokenResult> task = PlayServiceUtil.await(user.getIdToken(true), cancelCallback);
+        if (!task.isSuccessful()) {
+            throw new FirebaseAuthFailedException("getIdToken(true) failed");
+        }
+
+        // 55分で期限切れする
+        mToken = task.getResult().getToken();
+        mTokenExpireTime = System.currentTimeMillis() + (TimeUnit.MINUTES.toMillis(55));
+        return mToken;
     }
 
     /**
